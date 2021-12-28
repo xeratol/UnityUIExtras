@@ -1,4 +1,5 @@
 using System;
+using UnityEngine.UI;
 using UnityEngine.Events;
 using UnityEngine.EventSystems;
 
@@ -47,7 +48,7 @@ namespace UnityEngine.UI.Extra
         /// <summary>
         /// Event type used by the UI.Slider.
         /// </summary>
-        public class SliderEvent : UnityEvent<float> { }
+        public class SliderMinMaxEvent : UnityEvent<float, float> { }
 
         [SerializeField]
         private RectTransform m_FillRect;
@@ -95,7 +96,7 @@ namespace UnityEngine.UI.Extra
         }
 
         [SerializeField]
-        private RectTransform m_HandleRect;
+        private RectTransform m_HandleUpperRect;
 
         /// <summary>
         /// Optional RectTransform to use as a handle for the slider.
@@ -122,16 +123,60 @@ namespace UnityEngine.UI.Extra
         /// }
         /// </code>
         /// </example>
-        public RectTransform handleRect
+        public RectTransform handleUpperRect
         {
-            get { return m_HandleRect; }
+            get { return m_HandleUpperRect; }
             set
             {
                 //if (SetPropertyUtility.SetClass(ref m_HandleRect, value))
-                if (m_HandleRect != value)
+                if (m_HandleUpperRect != value)
                 {
-                    m_HandleRect = value;
-                    UpdateCachedReferences(); UpdateVisuals();
+                    m_HandleUpperRect = value;
+                    UpdateCachedReferences();
+                    UpdateVisuals();
+                }
+            }
+        }
+
+        [SerializeField]
+        private RectTransform m_HandleLowerRect;
+
+        /// <summary>
+        /// Optional RectTransform to use as a handle for the slider.
+        /// </summary>
+        /// <example>
+        /// <code>
+        /// using UnityEngine;
+        /// using System.Collections;
+        /// using UnityEngine.UI; // Required when Using UI elements.
+        ///
+        /// public class Example : MonoBehaviour
+        /// {
+        ///     public Slider mainSlider;
+        ///     //Reference to new "RectTransform" (Child of "Handle Slide Area").
+        ///     public RectTransform handleHighlighted;
+        ///
+        ///     //Deactivates the old Handle, then assigns and enables the new one.
+        ///     void Start()
+        ///     {
+        ///         mainSlider.handleRect.gameObject.SetActive(false);
+        ///         mainSlider.handleRect = handleHighlighted;
+        ///         mainSlider.handleRect.gameObject.SetActive(true);
+        ///     }
+        /// }
+        /// </code>
+        /// </example>
+        public RectTransform handleLowerRect
+        {
+            get { return m_HandleLowerRect; }
+            set
+            {
+                //if (SetPropertyUtility.SetClass(ref m_HandleRect, value))
+                if (m_HandleLowerRect != value)
+                {
+                    m_HandleLowerRect = value;
+                    UpdateCachedReferences();
+                    UpdateVisuals();
                 }
             }
         }
@@ -212,7 +257,7 @@ namespace UnityEngine.UI.Extra
                 if (m_MinValue != value)
                 {
                     m_MinValue = value;
-                    Set(m_Value);
+                    SetUpper(m_UpperValue);
                     UpdateVisuals();
                 }
             }
@@ -251,7 +296,7 @@ namespace UnityEngine.UI.Extra
                 if (m_MaxValue != value)
                 {
                     m_MaxValue = value;
-                    Set(m_Value);
+                    SetUpper(m_UpperValue);
                     UpdateVisuals();
                 }
             }
@@ -290,14 +335,14 @@ namespace UnityEngine.UI.Extra
                 if (m_WholeNumbers != value)
                 {
                     m_WholeNumbers = value;
-                    Set(m_Value);
+                    SetUpper(m_UpperValue);
                     UpdateVisuals();
                 }
             }
         }
 
         [SerializeField]
-        protected float m_Value;
+        protected float m_UpperValue;
 
         /// <summary>
         /// The current value of the slider.
@@ -321,15 +366,52 @@ namespace UnityEngine.UI.Extra
         /// }
         /// </code>
         /// </example>
-        public virtual float value
+        public virtual float upperValue
         {
             get
             {
-                return wholeNumbers ? Mathf.Round(m_Value) : m_Value;
+                return wholeNumbers ? Mathf.Round(m_UpperValue) : m_UpperValue;
             }
             set
             {
-                Set(value);
+                SetUpper(value);
+            }
+        }
+
+        [SerializeField]
+        protected float m_LowerValue;
+
+        /// <summary>
+        /// The current value of the slider.
+        /// </summary>
+        /// <example>
+        /// <code>
+        /// using UnityEngine;
+        /// using System.Collections;
+        /// using UnityEngine.UI; // Required when Using UI elements.
+        ///
+        /// public class Example : MonoBehaviour
+        /// {
+        ///     public Slider mainSlider;
+        ///
+        ///     //Invoked when a submit button is clicked.
+        ///     public void SubmitSliderSetting()
+        ///     {
+        ///         //Displays the value of the slider in the console.
+        ///         Debug.Log(mainSlider.value);
+        ///     }
+        /// }
+        /// </code>
+        /// </example>
+        public virtual float lowerValue
+        {
+            get
+            {
+                return wholeNumbers ? Mathf.Round(m_LowerValue) : m_LowerValue;
+            }
+            set
+            {
+                SetLower(value);
             }
         }
 
@@ -339,7 +421,7 @@ namespace UnityEngine.UI.Extra
         /// <param name="input">The new value for the slider.</param>
         public virtual void SetValueWithoutNotify(float input)
         {
-            Set(input, false);
+            SetUpper(input, false);
         }
 
         /// <summary>
@@ -364,24 +446,60 @@ namespace UnityEngine.UI.Extra
         /// }
         /// </code>
         /// </example>
-        public float normalizedValue
+        public float normalizedUpperValue
         {
             get
             {
                 if (Mathf.Approximately(minValue, maxValue))
                     return 0;
-                return Mathf.InverseLerp(minValue, maxValue, value);
+                return Mathf.InverseLerp(minValue, maxValue, upperValue);
             }
             set
             {
-                this.value = Mathf.Lerp(minValue, maxValue, value);
+                this.upperValue = Mathf.Lerp(minValue, maxValue, value);
+            }
+        }
+
+        /// <summary>
+        /// The current value of the slider normalized into a value between 0 and 1.
+        /// </summary>
+        /// <example>
+        /// <code>
+        /// using UnityEngine;
+        /// using System.Collections;
+        /// using UnityEngine.UI; // Required when Using UI elements.
+        ///
+        /// public class Example : MonoBehaviour
+        /// {
+        ///     public Slider mainSlider;
+        ///
+        ///     //Set to invoke when "OnValueChanged" method is called.
+        ///     void CheckNormalisedValue()
+        ///     {
+        ///         //Displays the normalised value of the slider everytime the value changes.
+        ///         Debug.Log(mainSlider.normalizedValue);
+        ///     }
+        /// }
+        /// </code>
+        /// </example>
+        public float normalizedLowerValue
+        {
+            get
+            {
+                if (Mathf.Approximately(minValue, maxValue))
+                    return 0;
+                return Mathf.InverseLerp(minValue, maxValue, lowerValue);
+            }
+            set
+            {
+                this.lowerValue = Mathf.Lerp(minValue, maxValue, value);
             }
         }
 
         [Space]
 
         [SerializeField]
-        private SliderEvent m_OnValueChanged = new SliderEvent();
+        private SliderMinMaxEvent m_OnValueChanged = new SliderMinMaxEvent();
 
         /// <summary>
         /// Callback executed when the value of the slider is changed.
@@ -410,15 +528,21 @@ namespace UnityEngine.UI.Extra
         /// }
         /// </code>
         /// </example>
-        public SliderEvent onValueChanged { get { return m_OnValueChanged; } set { m_OnValueChanged = value; } }
+        public SliderMinMaxEvent onValueChanged
+        {
+            get { return m_OnValueChanged; }
+            set { m_OnValueChanged = value; }
+        }
 
         // Private fields
 
         private Image m_FillImage;
         private Transform m_FillTransform;
         private RectTransform m_FillContainerRect;
-        private Transform m_HandleTransform;
-        private RectTransform m_HandleContainerRect;
+        private Transform m_HandleUpperTransform;
+        private Transform m_HandleLowerTransform;
+        private RectTransform m_HandleUpperContainerRect;
+        private RectTransform m_HandleLowerContainerRect;
 
         // The offset from handle position to mouse down position
         private Vector2 m_Offset = Vector2.zero;
@@ -466,7 +590,7 @@ namespace UnityEngine.UI.Extra
         {
 #if UNITY_EDITOR
             if (executing == CanvasUpdate.Prelayout)
-                onValueChanged.Invoke(value);
+                onValueChanged.Invoke(lowerValue, upperValue);
 #endif
         }
 
@@ -486,7 +610,8 @@ namespace UnityEngine.UI.Extra
         {
             base.OnEnable();
             UpdateCachedReferences();
-            Set(m_Value, false);
+            SetUpper(m_UpperValue, false);
+            SetLower(m_LowerValue, false);
             // Update rects since they need to be initialized correctly.
             UpdateVisuals();
         }
@@ -506,7 +631,8 @@ namespace UnityEngine.UI.Extra
             if (m_DelayedUpdateVisuals)
             {
                 m_DelayedUpdateVisuals = false;
-                Set(m_Value, false);
+                SetUpper(m_UpperValue, false);
+                SetLower(m_LowerValue, false);
                 UpdateVisuals();
             }
         }
@@ -515,8 +641,8 @@ namespace UnityEngine.UI.Extra
         {
             // Has value changed? Various elements of the slider have the old normalisedValue assigned, we can use this to perform a comparison.
             // We also need to ensure the value stays within min/max.
-            m_Value = ClampValue(m_Value);
-            float oldNormalizedValue = normalizedValue;
+            m_UpperValue = ClampValue(m_UpperValue);
+            float oldNormalizedValue = normalizedUpperValue;
             if (m_FillContainerRect != null)
             {
                 if (m_FillImage != null && m_FillImage.type == Image.Type.Filled)
@@ -524,15 +650,17 @@ namespace UnityEngine.UI.Extra
                 else
                     oldNormalizedValue = (reverseValue ? 1 - m_FillRect.anchorMin[(int)axis] : m_FillRect.anchorMax[(int)axis]);
             }
-            else if (m_HandleContainerRect != null)
-                oldNormalizedValue = (reverseValue ? 1 - m_HandleRect.anchorMin[(int)axis] : m_HandleRect.anchorMin[(int)axis]);
+            else if (m_HandleUpperContainerRect != null)
+                oldNormalizedValue = (reverseValue ? 1 - m_HandleUpperRect.anchorMin[(int)axis] : m_HandleUpperRect.anchorMin[(int)axis]);
+
+            // TODO oldNormalizedValue for Lower
 
             UpdateVisuals();
 
-            if (oldNormalizedValue != normalizedValue)
+            if (oldNormalizedValue != normalizedUpperValue)
             {
-                UISystemProfilerApi.AddMarker("Slider.value", this);
-                onValueChanged.Invoke(m_Value);
+                UISystemProfilerApi.AddMarker("SliderMinMax.upperValue", this);
+                onValueChanged.Invoke(m_LowerValue, m_UpperValue);
             }
         }
 
@@ -552,16 +680,28 @@ namespace UnityEngine.UI.Extra
                 m_FillImage = null;
             }
 
-            if (m_HandleRect && m_HandleRect != (RectTransform)transform)
+            if (m_HandleUpperRect && m_HandleUpperRect != (RectTransform)transform)
             {
-                m_HandleTransform = m_HandleRect.transform;
-                if (m_HandleTransform.parent != null)
-                    m_HandleContainerRect = m_HandleTransform.parent.GetComponent<RectTransform>();
+                m_HandleUpperTransform = m_HandleUpperRect.transform;
+                if (m_HandleUpperTransform.parent != null)
+                    m_HandleUpperContainerRect = m_HandleUpperTransform.parent.GetComponent<RectTransform>();
             }
             else
             {
-                m_HandleRect = null;
-                m_HandleContainerRect = null;
+                m_HandleUpperRect = null;
+                m_HandleUpperContainerRect = null;
+            }
+
+            if (m_HandleLowerRect && m_HandleLowerRect != (RectTransform)transform)
+            {
+                m_HandleLowerTransform = m_HandleLowerRect.transform;
+                if (m_HandleLowerTransform.parent != null)
+                    m_HandleLowerContainerRect = m_HandleLowerTransform.parent.GetComponent<RectTransform>();
+            }
+            else
+            {
+                m_HandleLowerRect = null;
+                m_HandleLowerContainerRect = null;
             }
         }
 
@@ -581,21 +721,51 @@ namespace UnityEngine.UI.Extra
         /// <remarks>
         /// Process the input to ensure the value is between min and max value. If the input is different set the value and send the callback is required.
         /// </remarks>
-        protected virtual void Set(float input, bool sendCallback = true)
+        protected virtual void SetUpper(float input, bool sendCallback = true)
         {
             // Clamp the input
             float newValue = ClampValue(input);
 
+            // TODO: check if lowerValue needs adjusting
+
             // If the stepped value doesn't match the last one, it's time to update
-            if (m_Value == newValue)
+            if (m_UpperValue == newValue)
                 return;
 
-            m_Value = newValue;
+            m_UpperValue = newValue;
             UpdateVisuals();
             if (sendCallback)
             {
-                UISystemProfilerApi.AddMarker("Slider.value", this);
-                m_OnValueChanged.Invoke(newValue);
+                UISystemProfilerApi.AddMarker("SliderMinMax.upperValue", this);
+                m_OnValueChanged.Invoke(m_LowerValue, m_UpperValue);
+            }
+        }
+
+        /// <summary>
+        /// Set the value of the slider.
+        /// </summary>
+        /// <param name="input">The new value for the slider.</param>
+        /// <param name="sendCallback">If the OnValueChanged callback should be invoked.</param>
+        /// <remarks>
+        /// Process the input to ensure the value is between min and max value. If the input is different set the value and send the callback is required.
+        /// </remarks>
+        protected virtual void SetLower(float input, bool sendCallback = true)
+        {
+            // Clamp the input
+            float newValue = ClampValue(input);
+
+            // TODO: check if upperValue needs adjusting
+
+            // If the stepped value doesn't match the last one, it's time to update
+            if (m_LowerValue == newValue)
+                return;
+
+            m_LowerValue = newValue;
+            UpdateVisuals();
+            if (sendCallback)
+            {
+                UISystemProfilerApi.AddMarker("SliderMinMax.lowerValue", this);
+                m_OnValueChanged.Invoke(m_LowerValue, m_UpperValue);
             }
         }
 
@@ -616,8 +786,17 @@ namespace UnityEngine.UI.Extra
             Vertical = 1
         }
 
-        Axis axis { get { return (m_Direction == Direction.LeftToRight || m_Direction == Direction.RightToLeft) ? Axis.Horizontal : Axis.Vertical; } }
-        bool reverseValue { get { return m_Direction == Direction.RightToLeft || m_Direction == Direction.TopToBottom; } }
+        Axis axis
+        {
+            get
+            {
+                return (m_Direction == Direction.LeftToRight || m_Direction == Direction.RightToLeft) ? Axis.Horizontal : Axis.Vertical;
+            }
+        }
+        bool reverseValue
+        {
+            get { return m_Direction == Direction.RightToLeft || m_Direction == Direction.TopToBottom; }
+        }
 
         // Force-update the slider. Useful if you've changed the properties and want it to update visually.
         private void UpdateVisuals()
@@ -637,35 +816,51 @@ namespace UnityEngine.UI.Extra
 
                 if (m_FillImage != null && m_FillImage.type == Image.Type.Filled)
                 {
-                    m_FillImage.fillAmount = normalizedValue;
+                    m_FillImage.fillAmount = normalizedUpperValue;
                 }
                 else
                 {
                     if (reverseValue)
-                        anchorMin[(int)axis] = 1 - normalizedValue;
+                    {
+                        anchorMin[(int)axis] = 1 - normalizedUpperValue;
+                        anchorMax[(int)axis] = 1 - normalizedLowerValue;
+                    }
                     else
-                        anchorMax[(int)axis] = normalizedValue;
+                    {
+                        anchorMin[(int)axis] = normalizedLowerValue;
+                        anchorMax[(int)axis] = normalizedUpperValue;
+                    }
                 }
 
                 m_FillRect.anchorMin = anchorMin;
                 m_FillRect.anchorMax = anchorMax;
             }
 
-            if (m_HandleContainerRect != null)
+            if (m_HandleUpperContainerRect != null)
             {
-                m_Tracker.Add(this, m_HandleRect, DrivenTransformProperties.Anchors);
+                m_Tracker.Add(this, m_HandleUpperRect, DrivenTransformProperties.Anchors);
                 Vector2 anchorMin = Vector2.zero;
                 Vector2 anchorMax = Vector2.one;
-                anchorMin[(int)axis] = anchorMax[(int)axis] = (reverseValue ? (1 - normalizedValue) : normalizedValue);
-                m_HandleRect.anchorMin = anchorMin;
-                m_HandleRect.anchorMax = anchorMax;
+                anchorMin[(int)axis] = anchorMax[(int)axis] = (reverseValue ? (1 - normalizedUpperValue) : normalizedUpperValue);
+                m_HandleUpperRect.anchorMin = anchorMin;
+                m_HandleUpperRect.anchorMax = anchorMax;
+            }
+
+            if (m_HandleLowerContainerRect != null)
+            {
+                m_Tracker.Add(this, m_HandleLowerRect, DrivenTransformProperties.Anchors);
+                Vector2 anchorMin = Vector2.zero;
+                Vector2 anchorMax = Vector2.one;
+                anchorMin[(int)axis] = anchorMax[(int)axis] = (reverseValue ? (1 - normalizedLowerValue) : normalizedLowerValue);
+                m_HandleLowerRect.anchorMin = anchorMin;
+                m_HandleLowerRect.anchorMax = anchorMax;
             }
         }
 
         // Update the slider's position based on the mouse.
         void UpdateDrag(PointerEventData eventData, Camera cam)
         {
-            RectTransform clickRect = m_HandleContainerRect ?? m_FillContainerRect;
+            RectTransform clickRect = m_HandleUpperContainerRect ?? m_FillContainerRect;
             if (clickRect != null && clickRect.rect.size[(int)axis] > 0)
             {
                 Vector2 position = Vector2.zero;
@@ -678,7 +873,7 @@ namespace UnityEngine.UI.Extra
                 localCursor -= clickRect.rect.position;
 
                 float val = Mathf.Clamp01((localCursor - m_Offset)[(int)axis] / clickRect.rect.size[(int)axis]);
-                normalizedValue = (reverseValue ? 1f - val : val);
+                normalizedUpperValue = (reverseValue ? 1f - val : val);
             }
         }
 
@@ -695,10 +890,10 @@ namespace UnityEngine.UI.Extra
             base.OnPointerDown(eventData);
 
             m_Offset = Vector2.zero;
-            if (m_HandleContainerRect != null && RectTransformUtility.RectangleContainsScreenPoint(m_HandleRect, eventData.pointerPressRaycast.screenPosition, eventData.enterEventCamera))
+            if (m_HandleUpperContainerRect != null && RectTransformUtility.RectangleContainsScreenPoint(m_HandleUpperRect, eventData.pointerPressRaycast.screenPosition, eventData.enterEventCamera))
             {
                 Vector2 localMousePos;
-                if (RectTransformUtility.ScreenPointToLocalPointInRectangle(m_HandleRect, eventData.pointerPressRaycast.screenPosition, eventData.pressEventCamera, out localMousePos))
+                if (RectTransformUtility.ScreenPointToLocalPointInRectangle(m_HandleUpperRect, eventData.pointerPressRaycast.screenPosition, eventData.pressEventCamera, out localMousePos))
                     m_Offset = localMousePos;
             }
             else
@@ -727,25 +922,25 @@ namespace UnityEngine.UI.Extra
             {
                 case MoveDirection.Left:
                     if (axis == Axis.Horizontal && FindSelectableOnLeft() == null)
-                        Set(reverseValue ? value + stepSize : value - stepSize);
+                        SetUpper(reverseValue ? upperValue + stepSize : upperValue - stepSize);
                     else
                         base.OnMove(eventData);
                     break;
                 case MoveDirection.Right:
                     if (axis == Axis.Horizontal && FindSelectableOnRight() == null)
-                        Set(reverseValue ? value - stepSize : value + stepSize);
+                        SetUpper(reverseValue ? upperValue - stepSize : upperValue + stepSize);
                     else
                         base.OnMove(eventData);
                     break;
                 case MoveDirection.Up:
                     if (axis == Axis.Vertical && FindSelectableOnUp() == null)
-                        Set(reverseValue ? value - stepSize : value + stepSize);
+                        SetUpper(reverseValue ? upperValue - stepSize : upperValue + stepSize);
                     else
                         base.OnMove(eventData);
                     break;
                 case MoveDirection.Down:
                     if (axis == Axis.Vertical && FindSelectableOnDown() == null)
-                        Set(reverseValue ? value + stepSize : value - stepSize);
+                        SetUpper(reverseValue ? upperValue + stepSize : upperValue - stepSize);
                     else
                         base.OnMove(eventData);
                     break;
