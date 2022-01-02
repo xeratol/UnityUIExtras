@@ -539,10 +539,7 @@ namespace UnityEngine.UI.Extra
         private Image m_FillImage;
         private Transform m_FillTransform;
         private RectTransform m_FillContainerRect;
-        private Transform m_HandleUpperTransform;
-        private Transform m_HandleLowerTransform;
-        private RectTransform m_HandleUpperContainerRect;
-        private RectTransform m_HandleLowerContainerRect;
+        private RectTransform m_HandlesContainerRect;
 
         // The offset from handle position to mouse down position
         private Vector2 m_Offset = Vector2.zero;
@@ -650,7 +647,7 @@ namespace UnityEngine.UI.Extra
                 else
                     oldNormalizedValue = (reverseValue ? 1 - m_FillRect.anchorMin[(int)axis] : m_FillRect.anchorMax[(int)axis]);
             }
-            else if (m_HandleUpperContainerRect != null)
+            else if (m_HandlesContainerRect != null)
                 oldNormalizedValue = (reverseValue ? 1 - m_HandleUpperRect.anchorMin[(int)axis] : m_HandleUpperRect.anchorMin[(int)axis]);
 
             // TODO oldNormalizedValue for Lower
@@ -680,28 +677,39 @@ namespace UnityEngine.UI.Extra
                 m_FillImage = null;
             }
 
+            m_HandlesContainerRect = null;
+            RectTransform handleUpperTransformParent = null;
+            RectTransform handleLowerTransformParent = null;
+
             if (m_HandleUpperRect && m_HandleUpperRect != (RectTransform)transform)
             {
-                m_HandleUpperTransform = m_HandleUpperRect.transform;
-                if (m_HandleUpperTransform.parent != null)
-                    m_HandleUpperContainerRect = m_HandleUpperTransform.parent.GetComponent<RectTransform>();
+                var handleUpperTransform = m_HandleUpperRect.transform;
+                if (handleUpperTransform.parent != null)
+                    handleUpperTransformParent = handleUpperTransform.parent.GetComponent<RectTransform>();
             }
             else
             {
                 m_HandleUpperRect = null;
-                m_HandleUpperContainerRect = null;
             }
 
             if (m_HandleLowerRect && m_HandleLowerRect != (RectTransform)transform)
             {
-                m_HandleLowerTransform = m_HandleLowerRect.transform;
-                if (m_HandleLowerTransform.parent != null)
-                    m_HandleLowerContainerRect = m_HandleLowerTransform.parent.GetComponent<RectTransform>();
+                var handleLowerTransform = m_HandleLowerRect.transform;
+                if (handleLowerTransform.parent != null)
+                    handleLowerTransformParent = handleLowerTransform.parent.GetComponent<RectTransform>();
             }
             else
             {
                 m_HandleLowerRect = null;
-                m_HandleLowerContainerRect = null;
+            }
+
+            if (handleUpperTransformParent != handleLowerTransformParent)
+            {
+                Debug.LogWarning("Parents of upper and lower handle are different", this);
+            }
+            else
+            {
+                m_HandlesContainerRect = handleUpperTransformParent;
             }
         }
 
@@ -836,7 +844,7 @@ namespace UnityEngine.UI.Extra
                 m_FillRect.anchorMax = anchorMax;
             }
 
-            if (m_HandleUpperContainerRect != null)
+            if (m_HandlesContainerRect != null)
             {
                 m_Tracker.Add(this, m_HandleUpperRect, DrivenTransformProperties.Anchors);
                 Vector2 anchorMin = Vector2.zero;
@@ -844,13 +852,10 @@ namespace UnityEngine.UI.Extra
                 anchorMin[(int)axis] = anchorMax[(int)axis] = (reverseValue ? (1 - normalizedUpperValue) : normalizedUpperValue);
                 m_HandleUpperRect.anchorMin = anchorMin;
                 m_HandleUpperRect.anchorMax = anchorMax;
-            }
 
-            if (m_HandleLowerContainerRect != null)
-            {
                 m_Tracker.Add(this, m_HandleLowerRect, DrivenTransformProperties.Anchors);
-                Vector2 anchorMin = Vector2.zero;
-                Vector2 anchorMax = Vector2.one;
+                anchorMin = Vector2.zero;
+                anchorMax = Vector2.one;
                 anchorMin[(int)axis] = anchorMax[(int)axis] = (reverseValue ? (1 - normalizedLowerValue) : normalizedLowerValue);
                 m_HandleLowerRect.anchorMin = anchorMin;
                 m_HandleLowerRect.anchorMax = anchorMax;
@@ -860,12 +865,14 @@ namespace UnityEngine.UI.Extra
         // Update the slider's position based on the mouse.
         void UpdateDrag(PointerEventData eventData, Camera cam)
         {
-            RectTransform clickRect = m_HandleUpperContainerRect ?? m_FillContainerRect;
+            RectTransform clickRect = m_HandlesContainerRect ?? m_FillContainerRect;
             if (clickRect != null && clickRect.rect.size[(int)axis] > 0)
             {
-                Vector2 position = Vector2.zero;
+                // TODO no idea how this applies for SliderMinMax yet
+                //Vector2 position = Vector2.zero;
                 //if (!MultipleDisplayUtilities.GetRelativeMousePositionForDrag(eventData, ref position))
                 //    return;
+                var position = eventData.position;
 
                 Vector2 localCursor;
                 if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(clickRect, position, cam, out localCursor))
@@ -873,7 +880,20 @@ namespace UnityEngine.UI.Extra
                 localCursor -= clickRect.rect.position;
 
                 float val = Mathf.Clamp01((localCursor - m_Offset)[(int)axis] / clickRect.rect.size[(int)axis]);
-                normalizedUpperValue = (reverseValue ? 1f - val : val);
+                if (reverseValue)
+                {
+                    val = 1f - val;
+                }
+                var upperValDist = Mathf.Abs(val - normalizedUpperValue);
+                var lowerValDist = Mathf.Abs(val - normalizedLowerValue);
+                if (upperValDist < lowerValDist)
+                {
+                    normalizedUpperValue = val;
+                }
+                else
+                {
+                    normalizedLowerValue = val;
+                }
             }
         }
 
@@ -889,14 +909,27 @@ namespace UnityEngine.UI.Extra
 
             base.OnPointerDown(eventData);
 
+            var isHandled = false;
             m_Offset = Vector2.zero;
-            if (m_HandleUpperContainerRect != null && RectTransformUtility.RectangleContainsScreenPoint(m_HandleUpperRect, eventData.pointerPressRaycast.screenPosition, eventData.enterEventCamera))
+            if (m_HandlesContainerRect != null)
             {
-                Vector2 localMousePos;
-                if (RectTransformUtility.ScreenPointToLocalPointInRectangle(m_HandleUpperRect, eventData.pointerPressRaycast.screenPosition, eventData.pressEventCamera, out localMousePos))
-                    m_Offset = localMousePos;
+                if (RectTransformUtility.RectangleContainsScreenPoint(m_HandleUpperRect, eventData.pointerPressRaycast.screenPosition, eventData.enterEventCamera))
+                {
+                    Vector2 localMousePos;
+                    if (RectTransformUtility.ScreenPointToLocalPointInRectangle(m_HandleUpperRect, eventData.pointerPressRaycast.screenPosition, eventData.pressEventCamera, out localMousePos))
+                        m_Offset = localMousePos;
+                    isHandled = true;
+                }
+                else if (RectTransformUtility.RectangleContainsScreenPoint(m_HandleLowerRect, eventData.pointerPressRaycast.screenPosition, eventData.enterEventCamera))
+                {
+                    Vector2 localMousePos;
+                    if (RectTransformUtility.ScreenPointToLocalPointInRectangle(m_HandleLowerRect, eventData.pointerPressRaycast.screenPosition, eventData.pressEventCamera, out localMousePos))
+                        m_Offset = localMousePos;
+                    isHandled = true;
+                }
             }
-            else
+
+            if (!isHandled)
             {
                 // Outside the slider handle - jump to this point instead
                 UpdateDrag(eventData, eventData.pressEventCamera);
