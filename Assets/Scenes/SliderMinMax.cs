@@ -496,6 +496,22 @@ namespace UnityEngine.UI.Extra
             }
         }
 
+        [SerializeField]
+        private float m_GapValue = 0.1f;
+
+        public virtual float gapValue
+        {
+            get
+            {
+                return wholeNumbers ? Mathf.Round(m_GapValue) : m_GapValue;
+            }
+            set
+            {
+                // TODO
+                m_GapValue = value;
+            }
+        }
+
         [Space]
 
         [SerializeField]
@@ -567,6 +583,8 @@ namespace UnityEngine.UI.Extra
             {
                 m_MinValue = Mathf.Round(m_MinValue);
                 m_MaxValue = Mathf.Round(m_MaxValue);
+                m_GapValue = Mathf.Round(m_GapValue);
+                // TODO max-min >= gap
             }
 
             //Onvalidate is called before OnEnabled. We need to make sure not to touch any other objects before OnEnable is run.
@@ -734,11 +752,17 @@ namespace UnityEngine.UI.Extra
             // Clamp the input
             float newValue = ClampValue(input);
 
-            // TODO: check if lowerValue needs adjusting
-
             // If the stepped value doesn't match the last one, it's time to update
             if (m_UpperValue == newValue)
                 return;
+
+            // Adjust the lower value if needed
+            if (m_LowerValue > newValue - gapValue)
+            {
+                var newLowerValue = ClampValue(newValue - gapValue);
+                newValue = newLowerValue + gapValue;
+                m_LowerValue = newLowerValue; // TODO is this safe?
+            }
 
             m_UpperValue = newValue;
             UpdateVisuals();
@@ -762,11 +786,17 @@ namespace UnityEngine.UI.Extra
             // Clamp the input
             float newValue = ClampValue(input);
 
-            // TODO: check if upperValue needs adjusting
-
             // If the stepped value doesn't match the last one, it's time to update
             if (m_LowerValue == newValue)
                 return;
+
+            // Adjust the upper value if needed
+            if (m_UpperValue < newValue + gapValue)
+            {
+                var newUpperValue = ClampValue(newValue + gapValue);
+                newValue = newUpperValue - gapValue;
+                m_UpperValue = newUpperValue; // TODO is this safe?
+            }
 
             m_LowerValue = newValue;
             UpdateVisuals();
