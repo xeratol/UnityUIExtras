@@ -22,6 +22,7 @@ namespace UnityEditor.UI.Extra
         SerializedProperty m_WholeNumbers;
         SerializedProperty m_UpperValue;
         SerializedProperty m_LowerValue;
+        SerializedProperty m_GapValue;
         SerializedProperty m_OnValueChanged;
 
         protected override void OnEnable()
@@ -36,6 +37,7 @@ namespace UnityEditor.UI.Extra
             m_WholeNumbers = serializedObject.FindProperty("m_WholeNumbers");
             m_UpperValue = serializedObject.FindProperty("m_UpperValue");
             m_LowerValue = serializedObject.FindProperty("m_LowerValue");
+            m_GapValue = serializedObject.FindProperty("m_GapValue");
             m_OnValueChanged = serializedObject.FindProperty("m_OnValueChanged");
         }
 
@@ -79,8 +81,8 @@ namespace UnityEditor.UI.Extra
                 }
 
                 EditorGUILayout.PropertyField(m_WholeNumbers);
-                EditorGUILayout.Slider(m_UpperValue, m_MinValue.floatValue, m_MaxValue.floatValue);
-                EditorGUILayout.Slider(m_LowerValue, m_MinValue.floatValue, m_MaxValue.floatValue);
+                DisplayGap();
+                DisplayUpperLower();
 
                 bool warning = false;
                 foreach (var obj in serializedObject.targetObjects)
@@ -106,6 +108,69 @@ namespace UnityEditor.UI.Extra
             }
 
             serializedObject.ApplyModifiedProperties();
+        }
+
+        private void DisplayUpperLower()
+        {
+            var oldUpperValue = m_UpperValue.floatValue;
+            var oldLowerValue = m_LowerValue.floatValue;
+            EditorGUILayout.Slider(m_UpperValue, m_MinValue.floatValue, m_MaxValue.floatValue);
+            EditorGUILayout.Slider(m_LowerValue, m_MinValue.floatValue, m_MaxValue.floatValue);
+
+            if (m_UpperValue.floatValue < oldUpperValue && m_LowerValue.floatValue > m_UpperValue.floatValue - m_GapValue.floatValue)
+            {
+                var newLowerValue = m_UpperValue.floatValue - m_GapValue.floatValue;
+                if (newLowerValue < m_MinValue.floatValue)
+                {
+                    newLowerValue = m_MinValue.floatValue;
+                }
+                m_UpperValue.floatValue = newLowerValue + m_GapValue.floatValue;
+                m_LowerValue.floatValue = newLowerValue;
+            }
+            else if (m_LowerValue.floatValue > oldLowerValue && m_UpperValue.floatValue < m_LowerValue.floatValue + m_GapValue.floatValue)
+            {
+                var newUppervalue = m_LowerValue.floatValue + m_GapValue.floatValue;
+                if (newUppervalue > m_MaxValue.floatValue)
+                {
+                    newUppervalue = m_MaxValue.floatValue;
+                }
+                m_UpperValue.floatValue = newUppervalue;
+                m_LowerValue.floatValue = newUppervalue - m_GapValue.floatValue;
+            }
+        }
+
+        private void DisplayGap()
+        {
+            var stepSize = m_WholeNumbers.boolValue ? 1f : 0f;
+            m_GapValue.floatValue = EditorGUILayout.Slider(new GUIContent(m_GapValue.displayName, "Gap between upper and lower values."), m_GapValue.floatValue, stepSize, m_MaxValue.floatValue);
+
+            if (Mathf.Approximately(m_GapValue.floatValue, 0f))
+            {
+                EditorGUILayout.HelpBox("Consider using a Slider if your gap value is 0.", MessageType.Warning);
+            }
+            if (Mathf.Approximately(m_GapValue.floatValue, m_MaxValue.floatValue))
+            {
+                EditorGUILayout.HelpBox("Handles will always be on extremes. Consider lowering the gap value.", MessageType.Warning);
+            }
+
+            var currentGap = m_UpperValue.floatValue - m_LowerValue.floatValue;
+            if (currentGap < m_GapValue.floatValue)
+            {
+                var midValue = m_LowerValue.floatValue + currentGap / 2;
+                m_UpperValue.floatValue = midValue + m_GapValue.floatValue * 0.5f;
+                m_LowerValue.floatValue = midValue - m_GapValue.floatValue * 0.5f;
+
+                if (m_UpperValue.floatValue > m_MaxValue.floatValue)
+                {
+                    m_UpperValue.floatValue = m_MaxValue.floatValue;
+                    m_LowerValue.floatValue = m_MaxValue.floatValue - m_GapValue.floatValue;
+                }
+                else if (m_LowerValue.floatValue < m_MinValue.floatValue)
+                {
+                    m_UpperValue.floatValue = m_MinValue.floatValue + m_GapValue.floatValue;
+                    m_LowerValue.floatValue = m_MinValue.floatValue;
+                }
+            }
         }
     }
 }

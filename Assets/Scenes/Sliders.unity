@@ -888,8 +888,9 @@ MonoBehaviour:
   m_MinValue: 0
   m_MaxValue: 20
   m_WholeNumbers: 0
-  m_UpperValue: 7.07
-  m_LowerValue: 3.12
+  m_UpperValue: 3.86
+  m_LowerValue: 0
+  m_GapValue: 9.23
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls: []
