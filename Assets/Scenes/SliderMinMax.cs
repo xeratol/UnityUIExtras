@@ -16,7 +16,7 @@ namespace UnityEngine.UI.Extra
     /// The anchors of the fill and handle RectTransforms are driven by the Slider. The fill and handle can be direct children of the GameObject with the Slider, or intermediary RectTransforms can be placed in between for additional control.
     /// When a change to the slider value occurs, a callback is sent to any registered listeners of UI.Slider.onValueChanged.
     /// </remarks>
-    public class SliderMinMax : Selectable, IDragHandler, IInitializePotentialDragHandler, ICanvasElement
+    public class SliderMinMax : Selectable, IDragHandler, IEndDragHandler, IInitializePotentialDragHandler, ICanvasElement
     {
         /// <summary>
         /// Setting that indicates one of four directions.
@@ -556,6 +556,7 @@ namespace UnityEngine.UI.Extra
         private Transform m_FillTransform;
         private RectTransform m_FillContainerRect;
         private RectTransform m_HandlesContainerRect;
+        private RectTransform m_SelectedHandle;
 
         // The offset from handle position to mouse down position
         private Vector2 m_Offset = Vector2.zero;
@@ -892,37 +893,65 @@ namespace UnityEngine.UI.Extra
             }
         }
 
+        bool GetNormalizedValueOfCursorLocation(PointerEventData eventData, Camera cam, RectTransform clickRect, ref float val)
+        {
+            // TODO no idea how this applies for SliderMinMax yet
+            //Vector2 position = Vector2.zero;
+            //if (!MultipleDisplayUtilities.GetRelativeMousePositionForDrag(eventData, ref position))
+            //    return;
+            var position = eventData.position;
+
+            Vector2 localCursor;
+            if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(clickRect, position, cam, out localCursor))
+                return false;
+            localCursor -= clickRect.rect.position;
+
+            val = Mathf.Clamp01((localCursor - m_Offset)[(int)axis] / clickRect.rect.size[(int)axis]);
+            if (reverseValue)
+            {
+                val = 1f - val;
+            }
+
+            return true;
+        }
+
         // Update the slider's position based on the mouse.
         void UpdateDrag(PointerEventData eventData, Camera cam)
         {
             RectTransform clickRect = m_HandlesContainerRect ?? m_FillContainerRect;
             if (clickRect != null && clickRect.rect.size[(int)axis] > 0)
             {
-                // TODO no idea how this applies for SliderMinMax yet
-                //Vector2 position = Vector2.zero;
-                //if (!MultipleDisplayUtilities.GetRelativeMousePositionForDrag(eventData, ref position))
-                //    return;
-                var position = eventData.position;
-
-                Vector2 localCursor;
-                if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(clickRect, position, cam, out localCursor))
+                var val = 0f;
+                if (!GetNormalizedValueOfCursorLocation(eventData, cam, clickRect, ref val))
+                {
                     return;
-                localCursor -= clickRect.rect.position;
-
-                float val = Mathf.Clamp01((localCursor - m_Offset)[(int)axis] / clickRect.rect.size[(int)axis]);
-                if (reverseValue)
-                {
-                    val = 1f - val;
                 }
-                var upperValDist = Mathf.Abs(val - normalizedUpperValue);
-                var lowerValDist = Mathf.Abs(val - normalizedLowerValue);
-                if (upperValDist < lowerValDist)
+
+                if (m_SelectedHandle == null)
                 {
-                    normalizedUpperValue = val;
+                    var upperValDist = Mathf.Abs(val - normalizedUpperValue);
+                    var lowerValDist = Mathf.Abs(val - normalizedLowerValue);
+                    if (upperValDist < lowerValDist)
+                    {
+                        normalizedUpperValue = val;
+                        m_SelectedHandle = m_HandleUpperRect;
+                    }
+                    else
+                    {
+                        normalizedLowerValue = val;
+                        m_SelectedHandle = m_HandleLowerRect;
+                    }
                 }
                 else
                 {
-                    normalizedLowerValue = val;
+                    if (m_SelectedHandle == m_HandleUpperRect)
+                    {
+                        normalizedUpperValue = val;
+                    }
+                    else if (m_SelectedHandle == m_HandleLowerRect)
+                    {
+                        normalizedLowerValue = val;
+                    }
                 }
             }
         }
@@ -947,14 +976,20 @@ namespace UnityEngine.UI.Extra
                 {
                     Vector2 localMousePos;
                     if (RectTransformUtility.ScreenPointToLocalPointInRectangle(m_HandleUpperRect, eventData.pointerPressRaycast.screenPosition, eventData.pressEventCamera, out localMousePos))
+                    {
                         m_Offset = localMousePos;
+                        m_SelectedHandle = m_HandleUpperRect;
+                    }
                     isHandled = true;
                 }
                 else if (RectTransformUtility.RectangleContainsScreenPoint(m_HandleLowerRect, eventData.pointerPressRaycast.screenPosition, eventData.enterEventCamera))
                 {
                     Vector2 localMousePos;
                     if (RectTransformUtility.ScreenPointToLocalPointInRectangle(m_HandleLowerRect, eventData.pointerPressRaycast.screenPosition, eventData.pressEventCamera, out localMousePos))
+                    {
                         m_Offset = localMousePos;
+                        m_SelectedHandle = m_HandleLowerRect;
+                    }
                     isHandled = true;
                 }
             }
@@ -971,6 +1006,11 @@ namespace UnityEngine.UI.Extra
             if (!MayDrag(eventData))
                 return;
             UpdateDrag(eventData, eventData.pressEventCamera);
+        }
+
+        public virtual void OnEndDrag(PointerEventData eventData)
+        {
+            m_SelectedHandle = null;
         }
 
         public override void OnMove(AxisEventData eventData)
