@@ -13,7 +13,6 @@ namespace UnityEditor.UI.Extra
     /// </summary>
     public class Slider2DEditor : SelectableEditor
     {
-        SerializedProperty m_Direction;
         SerializedProperty m_FillRect;
         SerializedProperty m_HandleRect;
         SerializedProperty m_MinValue;
@@ -27,7 +26,6 @@ namespace UnityEditor.UI.Extra
             base.OnEnable();
             m_FillRect = serializedObject.FindProperty("m_FillRect");
             m_HandleRect = serializedObject.FindProperty("m_HandleRect");
-            m_Direction = serializedObject.FindProperty("m_Direction");
             m_MinValue = serializedObject.FindProperty("m_MinValue");
             m_MaxValue = serializedObject.FindProperty("m_MaxValue");
             m_WholeNumbers = serializedObject.FindProperty("m_WholeNumbers");
@@ -58,17 +56,6 @@ namespace UnityEditor.UI.Extra
             if (m_FillRect.objectReferenceValue != null || m_HandleRect.objectReferenceValue != null)
             {
                 EditorGUI.BeginChangeCheck();
-                //EditorGUILayout.PropertyField(m_Direction);
-                /*if (EditorGUI.EndChangeCheck())
-                {
-                    Slider2D.Direction direction = (Slider2D.Direction)m_Direction.enumValueIndex;
-                    foreach (var obj in serializedObject.targetObjects)
-                    {
-                        var slider = obj as Slider2D;
-                        slider.SetDirection(direction, true);
-                    }
-                }*/
-
 
                 EditorGUI.BeginChangeCheck();
                 var newMin = EditorGUILayout.Vector2Field("Min Value", m_MinValue.vector2Value);
@@ -86,21 +73,6 @@ namespace UnityEditor.UI.Extra
 
                 EditorGUILayout.PropertyField(m_WholeNumbers);
                 m_Value.vector2Value = EditorGUILayout.Vector2Field("Value", m_Value.vector2Value);
-                //EditorGUILayout.Slider(m_Value, m_MinValue.vector2Value, m_MaxValue.vector2Value);
-
-                /*bool warning = false;
-                foreach (var obj in serializedObject.targetObjects)
-                {
-                    var slider = obj as Slider2D;
-                    Slider2D.Direction dir = slider.direction;
-                    if (dir == Slider2D.Direction.LeftToRight || dir == Slider2D.Direction.RightToLeft)
-                        warning = (slider.navigation.mode != Navigation.Mode.Automatic && (slider.FindSelectableOnLeft() != null || slider.FindSelectableOnRight() != null));
-                    else
-                        warning = (slider.navigation.mode != Navigation.Mode.Automatic && (slider.FindSelectableOnDown() != null || slider.FindSelectableOnUp() != null));
-                }
-
-                if (warning)
-                    EditorGUILayout.HelpBox("The selected slider direction conflicts with navigation. Not all navigation options may work.", MessageType.Warning);*/
 
                 // Draw the event notification options
                 EditorGUILayout.Space();
