@@ -17,32 +17,6 @@ namespace UnityEngine.UI.Extra
     /// </remarks>
     public class Slider2D : Selectable, IDragHandler, IInitializePotentialDragHandler, ICanvasElement
     {
-        /// <summary>
-        /// Setting that indicates one of four directions.
-        /// </summary>
-        /*public enum Direction
-        {
-            /// <summary>
-            /// From the left to the right
-            /// </summary>
-            LeftToRight,
-
-            /// <summary>
-            /// From the right to the left
-            /// </summary>
-            RightToLeft,
-
-            /// <summary>
-            /// From the bottom to the top.
-            /// </summary>
-            BottomToTop,
-
-            /// <summary>
-            /// From the top to the bottom.
-            /// </summary>
-            TopToBottom,
-        }*/
-
         [Serializable]
         /// <summary>
         /// Event type used by the UI.Slider.
@@ -141,50 +115,6 @@ namespace UnityEngine.UI.Extra
         }
 
         [Space]
-
-        //[SerializeField]
-        //private Direction m_Direction = Direction.LeftToRight;
-
-        /// <summary>
-        /// The direction of the slider, from minimum to maximum value.
-        /// </summary>
-        /// <example>
-        /// <code>
-        /// using UnityEngine;
-        /// using System.Collections;
-        /// using UnityEngine.UI; // Required when Using UI elements.
-        ///
-        /// public class Example : MonoBehaviour
-        /// {
-        ///     public Slider mainSlider;
-        ///
-        ///     public void Start()
-        ///     {
-        ///         //Changes the direction of the slider.
-        ///         if (mainSlider.direction == Slider.Direction.BottomToTop)
-        ///         {
-        ///             mainSlider.direction = Slider.Direction.TopToBottom;
-        ///         }
-        ///     }
-        /// }
-        /// </code>
-        /// </example>
-        /*public Direction direction
-        {
-            get
-            {
-                return m_Direction;
-            }
-            set
-            {
-                //if (SetPropertyUtility.SetStruct(ref m_Direction, value))
-                if (m_Direction != value)
-                {
-                    m_Direction = value;
-                    UpdateVisuals();
-                }
-            }
-        }*/
 
         [SerializeField]
         private Vector2 m_MinValue = Vector2.zero;
@@ -664,15 +594,6 @@ namespace UnityEngine.UI.Extra
             UpdateVisuals();
         }
 
-        /*enum Axis
-        {
-            Horizontal = 0,
-            Vertical = 1
-        }*/
-
-        //Axis axis { get { return (m_Direction == Direction.LeftToRight || m_Direction == Direction.RightToLeft) ? Axis.Horizontal : Axis.Vertical; } }
-        //bool reverseValue { get { return m_Direction == Direction.RightToLeft || m_Direction == Direction.TopToBottom; } }
-
         // Force-update the slider. Useful if you've changed the properties and want it to update visually.
         private void UpdateVisuals()
         {
@@ -710,7 +631,6 @@ namespace UnityEngine.UI.Extra
                 m_Tracker.Add(this, m_HandleRect, DrivenTransformProperties.Anchors);
                 Vector2 anchorMin = Vector2.zero;
                 Vector2 anchorMax = Vector2.one;
-                //anchorMin[(int)axis] = anchorMax[(int)axis] = (reverseValue ? (1 - normalizedValue) : normalizedValue);
                 anchorMin = anchorMax = normalizedValue;
                 m_HandleRect.anchorMin = anchorMin;
                 m_HandleRect.anchorMax = anchorMax;
@@ -738,8 +658,6 @@ namespace UnityEngine.UI.Extra
                 val.x = Mathf.Clamp01((localCursor - m_Offset).x / clickRect.rect.size.x);
                 val.y = Mathf.Clamp01((localCursor - m_Offset).y / clickRect.rect.size.y);
                 normalizedValue = val;
-                //float val = Mathf.Clamp01((localCursor - m_Offset)[(int)axis] / clickRect.rect.size[(int)axis]);
-                //normalizedValue = (reverseValue ? 1f - val : val);
             }
         }
 
@@ -867,43 +785,5 @@ namespace UnityEngine.UI.Extra
         {
             eventData.useDragThreshold = false;
         }
-
-        /// <summary>
-        /// Sets the direction of this slider, optionally changing the layout as well.
-        /// </summary>
-        /// <param name="direction">The direction of the slider</param>
-        /// <param name="includeRectLayouts">Should the layout be flipped together with the slider direction</param>
-        /// <example>
-        /// <code>
-        /// using UnityEngine;
-        /// using System.Collections;
-        /// using UnityEngine.UI; // Required when Using UI elements.
-        ///
-        /// public class Example : MonoBehaviour
-        /// {
-        ///     public Slider mainSlider;
-        ///
-        ///     public void Start()
-        ///     {
-        ///         mainSlider.SetDirection(Slider.Direction.LeftToRight, false);
-        ///     }
-        /// }
-        /// </code>
-        /// </example>
-        /*public void SetDirection(Direction direction, bool includeRectLayouts)
-        {
-            Axis oldAxis = axis;
-            bool oldReverse = reverseValue;
-            this.direction = direction;
-
-            if (!includeRectLayouts)
-                return;
-
-            if (axis != oldAxis)
-                RectTransformUtility.FlipLayoutAxes(transform as RectTransform, true, true);
-
-            if (reverseValue != oldReverse)
-                RectTransformUtility.FlipLayoutOnAxis(transform as RectTransform, (int)axis, true, true);
-        }*/
     }
 }
