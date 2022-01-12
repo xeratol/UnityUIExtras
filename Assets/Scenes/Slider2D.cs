@@ -776,7 +776,7 @@ namespace UnityEngine.UI.Extra
             UpdateDrag(eventData, eventData.pressEventCamera);
         }
 
-        /*public override void OnMove(AxisEventData eventData)
+        public override void OnMove(AxisEventData eventData)
         {
             if (!IsActive() || !IsInteractable())
             {
@@ -784,74 +784,84 @@ namespace UnityEngine.UI.Extra
                 return;
             }
 
+            var step = Vector2.zero;
             switch (eventData.moveDir)
             {
                 case MoveDirection.Left:
-                    if (axis == Axis.Horizontal && FindSelectableOnLeft() == null)
-                        Set(reverseValue ? value + stepSize : value - stepSize);
+                    if (FindSelectableOnLeft() == null)
+                    {
+                        step.x = -stepSize.x;
+                    }
                     else
                         base.OnMove(eventData);
                     break;
                 case MoveDirection.Right:
-                    if (axis == Axis.Horizontal && FindSelectableOnRight() == null)
-                        Set(reverseValue ? value - stepSize : value + stepSize);
+                    if (FindSelectableOnRight() == null)
+                    {
+                        step.x = stepSize.x;
+                    }
                     else
                         base.OnMove(eventData);
                     break;
                 case MoveDirection.Up:
-                    if (axis == Axis.Vertical && FindSelectableOnUp() == null)
-                        Set(reverseValue ? value - stepSize : value + stepSize);
+                    if (FindSelectableOnUp() == null)
+                    {
+                        step.y = stepSize.y;
+                    }
                     else
                         base.OnMove(eventData);
                     break;
                 case MoveDirection.Down:
-                    if (axis == Axis.Vertical && FindSelectableOnDown() == null)
-                        Set(reverseValue ? value + stepSize : value - stepSize);
+                    if (FindSelectableOnDown() == null)
+                    {
+                        step.y = -stepSize.y;
+                    }
                     else
                         base.OnMove(eventData);
                     break;
             }
-        }*/
+            Set(value + step);
+        }
 
         /// <summary>
         /// See Selectable.FindSelectableOnLeft
         /// </summary>
-        /*public override Selectable FindSelectableOnLeft()
+        public override Selectable FindSelectableOnLeft()
         {
-            if (navigation.mode == Navigation.Mode.Automatic && axis == Axis.Horizontal)
+            if (navigation.mode == Navigation.Mode.Automatic)
                 return null;
             return base.FindSelectableOnLeft();
-        }*/
+        }
 
         /// <summary>
         /// See Selectable.FindSelectableOnRight
         /// </summary>
-        /*public override Selectable FindSelectableOnRight()
+        public override Selectable FindSelectableOnRight()
         {
-            if (navigation.mode == Navigation.Mode.Automatic && axis == Axis.Horizontal)
+            if (navigation.mode == Navigation.Mode.Automatic)
                 return null;
             return base.FindSelectableOnRight();
-        }*/
+        }
 
         /// <summary>
         /// See Selectable.FindSelectableOnUp
         /// </summary>
-        /*public override Selectable FindSelectableOnUp()
+        public override Selectable FindSelectableOnUp()
         {
-            if (navigation.mode == Navigation.Mode.Automatic && axis == Axis.Vertical)
+            if (navigation.mode == Navigation.Mode.Automatic)
                 return null;
             return base.FindSelectableOnUp();
-        }*/
+        }
 
         /// <summary>
         /// See Selectable.FindSelectableOnDown
         /// </summary>
-        /*public override Selectable FindSelectableOnDown()
+        public override Selectable FindSelectableOnDown()
         {
-            if (navigation.mode == Navigation.Mode.Automatic && axis == Axis.Vertical)
+            if (navigation.mode == Navigation.Mode.Automatic)
                 return null;
             return base.FindSelectableOnDown();
-        }*/
+        }
 
         public virtual void OnInitializePotentialDrag(PointerEventData eventData)
         {
