@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class SliderMinMaxText : MonoBehaviour
+public class Slider2DText : MonoBehaviour
 {
     [SerializeField]
     private Text text;
@@ -13,8 +13,8 @@ public class SliderMinMaxText : MonoBehaviour
         Debug.Assert(text != null);
     }
 
-    public void OnSliderMinMaxChange(float min, float max)
+    public void OnSlider2DChange(Vector2 val)
     {
-        text.text = string.Format("({0:F2}, {1:F2})", min, max);
+        text.text = string.Format("({0:F2}, {1:F2})", val.x, val.y);
     }
 }
