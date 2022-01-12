@@ -20,7 +20,7 @@ namespace UnityEngine.UI.Extra
         /// <summary>
         /// Setting that indicates one of four directions.
         /// </summary>
-        public enum Direction
+        /*public enum Direction
         {
             /// <summary>
             /// From the left to the right
@@ -41,13 +41,13 @@ namespace UnityEngine.UI.Extra
             /// From the top to the bottom.
             /// </summary>
             TopToBottom,
-        }
+        }*/
 
         [Serializable]
         /// <summary>
         /// Event type used by the UI.Slider.
         /// </summary>
-        public class SliderEvent : UnityEvent<float> { }
+        public class Slider2DEvent : UnityEvent<Vector2> { }
 
         [SerializeField]
         private RectTransform m_FillRect;
@@ -142,8 +142,8 @@ namespace UnityEngine.UI.Extra
 
         [Space]
 
-        [SerializeField]
-        private Direction m_Direction = Direction.LeftToRight;
+        //[SerializeField]
+        //private Direction m_Direction = Direction.LeftToRight;
 
         /// <summary>
         /// The direction of the slider, from minimum to maximum value.
@@ -169,7 +169,7 @@ namespace UnityEngine.UI.Extra
         /// }
         /// </code>
         /// </example>
-        public Direction direction
+        /*public Direction direction
         {
             get
             {
@@ -184,10 +184,10 @@ namespace UnityEngine.UI.Extra
                     UpdateVisuals();
                 }
             }
-        }
+        }*/
 
         [SerializeField]
-        private float m_MinValue = 0;
+        private Vector2 m_MinValue = Vector2.zero;
 
         /// <summary>
         /// The minimum allowed value of the slider.
@@ -210,7 +210,7 @@ namespace UnityEngine.UI.Extra
         /// }
         /// </code>
         /// </example>
-        public float minValue
+        public Vector2 minValue
         {
             get
             {
@@ -219,7 +219,7 @@ namespace UnityEngine.UI.Extra
             set
             {
                 //if (SetPropertyUtility.SetStruct(ref m_MinValue, value))
-                if (!Mathf.Approximately(m_MinValue, value))
+                if (!Mathf.Approximately(m_MinValue.x, value.x) || !Mathf.Approximately(m_MinValue.y, value.y))
                 {
                     m_MinValue = value;
                     Set(m_Value);
@@ -229,7 +229,7 @@ namespace UnityEngine.UI.Extra
         }
 
         [SerializeField]
-        private float m_MaxValue = 1;
+        private Vector2 m_MaxValue = Vector2.one;
 
         /// <summary>
         /// The maximum allowed value of the slider.
@@ -252,7 +252,7 @@ namespace UnityEngine.UI.Extra
         /// }
         /// </code>
         /// </example>
-        public float maxValue
+        public Vector2 maxValue
         {
             get
             {
@@ -261,7 +261,7 @@ namespace UnityEngine.UI.Extra
             set
             {
                 //if (SetPropertyUtility.SetStruct(ref m_MaxValue, value))
-                if (!Mathf.Approximately(m_MaxValue, value))
+                if (!Mathf.Approximately(m_MaxValue.x, value.x) || !Mathf.Approximately(m_MaxValue.y, value.y))
                 {
                     m_MaxValue = value;
                     Set(m_Value);
@@ -313,7 +313,7 @@ namespace UnityEngine.UI.Extra
         }
 
         [SerializeField]
-        protected float m_Value;
+        protected Vector2 m_Value;
 
         /// <summary>
         /// The current value of the slider.
@@ -337,11 +337,11 @@ namespace UnityEngine.UI.Extra
         /// }
         /// </code>
         /// </example>
-        public virtual float value
+        public virtual Vector2 value
         {
             get
             {
-                return wholeNumbers ? Mathf.Round(m_Value) : m_Value;
+                return wholeNumbers ? Round(m_Value) : m_Value;
             }
             set
             {
@@ -353,7 +353,7 @@ namespace UnityEngine.UI.Extra
         /// Set the value of the slider without invoking onValueChanged callback.
         /// </summary>
         /// <param name="input">The new value for the slider.</param>
-        public virtual void SetValueWithoutNotify(float input)
+        public virtual void SetValueWithoutNotify(Vector2 input)
         {
             Set(input, false);
         }
@@ -380,24 +380,30 @@ namespace UnityEngine.UI.Extra
         /// }
         /// </code>
         /// </example>
-        public float normalizedValue
+        public Vector2 normalizedValue
         {
             get
             {
-                if (Mathf.Approximately(minValue, maxValue))
-                    return 0;
-                return Mathf.InverseLerp(minValue, maxValue, value);
+                if (Mathf.Approximately(minValue.x, maxValue.x) && Mathf.Approximately(minValue.y, maxValue.y))
+                    return Vector2.zero;
+                var nValue = new Vector2();
+                nValue.x = Mathf.InverseLerp(minValue.x, maxValue.x, value.x);
+                nValue.y = Mathf.InverseLerp(minValue.y, maxValue.y, value.y);
+                return nValue;
             }
             set
             {
-                this.value = Mathf.Lerp(minValue, maxValue, value);
+                var val = new Vector2();
+                val.x = Mathf.Lerp(minValue.x, maxValue.x, value.x);
+                val.y = Mathf.Lerp(minValue.y, maxValue.y, value.y);
+                this.value = val;
             }
         }
 
         [Space]
 
         [SerializeField]
-        private SliderEvent m_OnValueChanged = new SliderEvent();
+        private Slider2DEvent m_OnValueChanged = new Slider2DEvent();
 
         /// <summary>
         /// Callback executed when the value of the slider is changed.
@@ -426,7 +432,17 @@ namespace UnityEngine.UI.Extra
         /// }
         /// </code>
         /// </example>
-        public SliderEvent onValueChanged { get { return m_OnValueChanged; } set { m_OnValueChanged = value; } }
+        public Slider2DEvent onValueChanged
+        {
+            get
+            {
+                return m_OnValueChanged;
+            }
+            set
+            {
+                m_OnValueChanged = value;
+            }
+        }
 
         // Private fields
 
@@ -448,10 +464,32 @@ namespace UnityEngine.UI.Extra
         private bool m_DelayedUpdateVisuals = false;
 
         // Size of each step.
-        float stepSize { get { return wholeNumbers ? 1 : (maxValue - minValue) * 0.1f; } }
+        Vector2 stepSize
+        {
+            get
+            {
+                return wholeNumbers ? Vector2.one : (maxValue - minValue) * 0.1f;
+            }
+        }
 
         protected Slider2D()
         { }
+
+        private Vector2 Round(Vector2 input)
+        {
+            var v = Vector2.zero;
+            v.x = Mathf.Round(input.x);
+            v.y = Mathf.Round(input.y);
+            return v;
+        }
+
+        private Vector2 Clamp(Vector2 input, Vector2 min, Vector2 max)
+        {
+            var v = Vector2.zero;
+            v.x = Mathf.Clamp(input.x, min.x, max.x);
+            v.y = Mathf.Clamp(input.y, min.y, max.y);
+            return v;
+        }
 
 #if UNITY_EDITOR
         protected override void OnValidate()
@@ -460,8 +498,8 @@ namespace UnityEngine.UI.Extra
 
             if (wholeNumbers)
             {
-                m_MinValue = Mathf.Round(m_MinValue);
-                m_MaxValue = Mathf.Round(m_MaxValue);
+                m_MinValue = Round(m_MinValue);
+                m_MaxValue = Round(m_MaxValue);
             }
 
             //Onvalidate is called before OnEnabled. We need to make sure not to touch any other objects before OnEnable is run.
@@ -527,12 +565,12 @@ namespace UnityEngine.UI.Extra
             }
         }
 
-        protected override void OnDidApplyAnimationProperties()
+        /*protected override void OnDidApplyAnimationProperties()
         {
             // Has value changed? Various elements of the slider have the old normalisedValue assigned, we can use this to perform a comparison.
             // We also need to ensure the value stays within min/max.
             m_Value = ClampValue(m_Value);
-            float oldNormalizedValue = normalizedValue;
+            var oldNormalizedValue = normalizedValue;
             if (m_FillContainerRect != null)
             {
                 if (m_FillImage != null && m_FillImage.type == Image.Type.Filled)
@@ -547,10 +585,10 @@ namespace UnityEngine.UI.Extra
 
             if (oldNormalizedValue != normalizedValue)
             {
-                UISystemProfilerApi.AddMarker("Slider.value", this);
+                UISystemProfilerApi.AddMarker("Slider2D.value", this);
                 onValueChanged.Invoke(m_Value);
             }
-        }
+        }*/
 
         void UpdateCachedReferences()
         {
@@ -581,11 +619,11 @@ namespace UnityEngine.UI.Extra
             }
         }
 
-        float ClampValue(float input)
+        Vector2 ClampValue(Vector2 input)
         {
-            float newValue = Mathf.Clamp(input, minValue, maxValue);
+            var newValue = Clamp(input, minValue, maxValue);
             if (wholeNumbers)
-                newValue = Mathf.Round(newValue);
+                newValue = Round(newValue);
             return newValue;
         }
 
@@ -597,10 +635,10 @@ namespace UnityEngine.UI.Extra
         /// <remarks>
         /// Process the input to ensure the value is between min and max value. If the input is different set the value and send the callback is required.
         /// </remarks>
-        protected virtual void Set(float input, bool sendCallback = true)
+        protected virtual void Set(Vector2 input, bool sendCallback = true)
         {
             // Clamp the input
-            float newValue = ClampValue(input);
+            var newValue = ClampValue(input);
 
             // If the stepped value doesn't match the last one, it's time to update
             if (m_Value == newValue)
@@ -610,7 +648,7 @@ namespace UnityEngine.UI.Extra
             UpdateVisuals();
             if (sendCallback)
             {
-                UISystemProfilerApi.AddMarker("Slider.value", this);
+                UISystemProfilerApi.AddMarker("Slider2D.value", this);
                 m_OnValueChanged.Invoke(newValue);
             }
         }
@@ -626,14 +664,14 @@ namespace UnityEngine.UI.Extra
             UpdateVisuals();
         }
 
-        enum Axis
+        /*enum Axis
         {
             Horizontal = 0,
             Vertical = 1
-        }
+        }*/
 
-        Axis axis { get { return (m_Direction == Direction.LeftToRight || m_Direction == Direction.RightToLeft) ? Axis.Horizontal : Axis.Vertical; } }
-        bool reverseValue { get { return m_Direction == Direction.RightToLeft || m_Direction == Direction.TopToBottom; } }
+        //Axis axis { get { return (m_Direction == Direction.LeftToRight || m_Direction == Direction.RightToLeft) ? Axis.Horizontal : Axis.Vertical; } }
+        //bool reverseValue { get { return m_Direction == Direction.RightToLeft || m_Direction == Direction.TopToBottom; } }
 
         // Force-update the slider. Useful if you've changed the properties and want it to update visually.
         private void UpdateVisuals()
@@ -651,7 +689,7 @@ namespace UnityEngine.UI.Extra
                 Vector2 anchorMin = Vector2.zero;
                 Vector2 anchorMax = Vector2.one;
 
-                if (m_FillImage != null && m_FillImage.type == Image.Type.Filled)
+                /*if (m_FillImage != null && m_FillImage.type == Image.Type.Filled)
                 {
                     m_FillImage.fillAmount = normalizedValue;
                 }
@@ -661,7 +699,7 @@ namespace UnityEngine.UI.Extra
                         anchorMin[(int)axis] = 1 - normalizedValue;
                     else
                         anchorMax[(int)axis] = normalizedValue;
-                }
+                }*/
 
                 m_FillRect.anchorMin = anchorMin;
                 m_FillRect.anchorMax = anchorMax;
@@ -672,7 +710,8 @@ namespace UnityEngine.UI.Extra
                 m_Tracker.Add(this, m_HandleRect, DrivenTransformProperties.Anchors);
                 Vector2 anchorMin = Vector2.zero;
                 Vector2 anchorMax = Vector2.one;
-                anchorMin[(int)axis] = anchorMax[(int)axis] = (reverseValue ? (1 - normalizedValue) : normalizedValue);
+                //anchorMin[(int)axis] = anchorMax[(int)axis] = (reverseValue ? (1 - normalizedValue) : normalizedValue);
+                anchorMin = anchorMax = normalizedValue;
                 m_HandleRect.anchorMin = anchorMin;
                 m_HandleRect.anchorMax = anchorMax;
             }
@@ -682,7 +721,7 @@ namespace UnityEngine.UI.Extra
         void UpdateDrag(PointerEventData eventData, Camera cam)
         {
             RectTransform clickRect = m_HandleContainerRect ?? m_FillContainerRect;
-            if (clickRect != null && clickRect.rect.size[(int)axis] > 0)
+            if (clickRect != null /*&& clickRect.rect.size[(int)axis] > 0*/)
             {
                 // TODO MultipleDisplayUtilities.GetRelativeMousePositionForDrag is inaccessible
                 //Vector2 position = Vector2.zero;
@@ -695,8 +734,12 @@ namespace UnityEngine.UI.Extra
                     return;
                 localCursor -= clickRect.rect.position;
 
-                float val = Mathf.Clamp01((localCursor - m_Offset)[(int)axis] / clickRect.rect.size[(int)axis]);
-                normalizedValue = (reverseValue ? 1f - val : val);
+                var val = Vector2.zero;
+                val.x = Mathf.Clamp01((localCursor - m_Offset).x / clickRect.rect.size.x);
+                val.y = Mathf.Clamp01((localCursor - m_Offset).y / clickRect.rect.size.y);
+                normalizedValue = val;
+                //float val = Mathf.Clamp01((localCursor - m_Offset)[(int)axis] / clickRect.rect.size[(int)axis]);
+                //normalizedValue = (reverseValue ? 1f - val : val);
             }
         }
 
@@ -733,7 +776,7 @@ namespace UnityEngine.UI.Extra
             UpdateDrag(eventData, eventData.pressEventCamera);
         }
 
-        public override void OnMove(AxisEventData eventData)
+        /*public override void OnMove(AxisEventData eventData)
         {
             if (!IsActive() || !IsInteractable())
             {
@@ -768,47 +811,47 @@ namespace UnityEngine.UI.Extra
                         base.OnMove(eventData);
                     break;
             }
-        }
+        }*/
 
         /// <summary>
         /// See Selectable.FindSelectableOnLeft
         /// </summary>
-        public override Selectable FindSelectableOnLeft()
+        /*public override Selectable FindSelectableOnLeft()
         {
             if (navigation.mode == Navigation.Mode.Automatic && axis == Axis.Horizontal)
                 return null;
             return base.FindSelectableOnLeft();
-        }
+        }*/
 
         /// <summary>
         /// See Selectable.FindSelectableOnRight
         /// </summary>
-        public override Selectable FindSelectableOnRight()
+        /*public override Selectable FindSelectableOnRight()
         {
             if (navigation.mode == Navigation.Mode.Automatic && axis == Axis.Horizontal)
                 return null;
             return base.FindSelectableOnRight();
-        }
+        }*/
 
         /// <summary>
         /// See Selectable.FindSelectableOnUp
         /// </summary>
-        public override Selectable FindSelectableOnUp()
+        /*public override Selectable FindSelectableOnUp()
         {
             if (navigation.mode == Navigation.Mode.Automatic && axis == Axis.Vertical)
                 return null;
             return base.FindSelectableOnUp();
-        }
+        }*/
 
         /// <summary>
         /// See Selectable.FindSelectableOnDown
         /// </summary>
-        public override Selectable FindSelectableOnDown()
+        /*public override Selectable FindSelectableOnDown()
         {
             if (navigation.mode == Navigation.Mode.Automatic && axis == Axis.Vertical)
                 return null;
             return base.FindSelectableOnDown();
-        }
+        }*/
 
         public virtual void OnInitializePotentialDrag(PointerEventData eventData)
         {
@@ -837,7 +880,7 @@ namespace UnityEngine.UI.Extra
         /// }
         /// </code>
         /// </example>
-        public void SetDirection(Direction direction, bool includeRectLayouts)
+        /*public void SetDirection(Direction direction, bool includeRectLayouts)
         {
             Axis oldAxis = axis;
             bool oldReverse = reverseValue;
@@ -851,6 +894,6 @@ namespace UnityEngine.UI.Extra
 
             if (reverseValue != oldReverse)
                 RectTransformUtility.FlipLayoutOnAxis(transform as RectTransform, (int)axis, true, true);
-        }
+        }*/
     }
 }
