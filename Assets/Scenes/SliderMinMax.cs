@@ -895,7 +895,7 @@ namespace UnityEngine.UI.Extra
 
         bool GetNormalizedValueOfCursorLocation(PointerEventData eventData, Camera cam, RectTransform clickRect, ref float val)
         {
-            // TODO no idea how this applies for SliderMinMax yet
+            // TODO MultipleDisplayUtilities.GetRelativeMousePositionForDrag is inaccessible
             //Vector2 position = Vector2.zero;
             //if (!MultipleDisplayUtilities.GetRelativeMousePositionForDrag(eventData, ref position))
             //    return;
