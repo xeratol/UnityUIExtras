@@ -376,7 +376,7 @@ namespace UnityEngine.UI.Extra
 
         // Private fields
 
-        private Image m_FillImage;
+        //private Image m_FillImage;
         private Transform m_FillTransform;
         private RectTransform m_FillContainerRect;
         private Transform m_HandleTransform;
@@ -495,7 +495,7 @@ namespace UnityEngine.UI.Extra
             }
         }
 
-        /*protected override void OnDidApplyAnimationProperties()
+        protected override void OnDidApplyAnimationProperties()
         {
             // Has value changed? Various elements of the slider have the old normalisedValue assigned, we can use this to perform a comparison.
             // We also need to ensure the value stays within min/max.
@@ -503,13 +503,12 @@ namespace UnityEngine.UI.Extra
             var oldNormalizedValue = normalizedValue;
             if (m_FillContainerRect != null)
             {
-                if (m_FillImage != null && m_FillImage.type == Image.Type.Filled)
-                    oldNormalizedValue = m_FillImage.fillAmount;
-                else
-                    oldNormalizedValue = (reverseValue ? 1 - m_FillRect.anchorMin[(int)axis] : m_FillRect.anchorMax[(int)axis]);
+                oldNormalizedValue = m_FillRect.anchorMax;
             }
             else if (m_HandleContainerRect != null)
-                oldNormalizedValue = (reverseValue ? 1 - m_HandleRect.anchorMin[(int)axis] : m_HandleRect.anchorMin[(int)axis]);
+            {
+                oldNormalizedValue = m_HandleRect.anchorMin;
+            }
 
             UpdateVisuals();
 
@@ -518,14 +517,13 @@ namespace UnityEngine.UI.Extra
                 UISystemProfilerApi.AddMarker("Slider2D.value", this);
                 onValueChanged.Invoke(m_Value);
             }
-        }*/
+        }
 
         void UpdateCachedReferences()
         {
             if (m_FillRect && m_FillRect != (RectTransform)transform)
             {
                 m_FillTransform = m_FillRect.transform;
-                m_FillImage = m_FillRect.GetComponent<Image>();
                 if (m_FillTransform.parent != null)
                     m_FillContainerRect = m_FillTransform.parent.GetComponent<RectTransform>();
             }
@@ -533,7 +531,6 @@ namespace UnityEngine.UI.Extra
             {
                 m_FillRect = null;
                 m_FillContainerRect = null;
-                m_FillImage = null;
             }
 
             if (m_HandleRect && m_HandleRect != (RectTransform)transform)
@@ -607,33 +604,16 @@ namespace UnityEngine.UI.Extra
             if (m_FillContainerRect != null)
             {
                 m_Tracker.Add(this, m_FillRect, DrivenTransformProperties.Anchors);
-                Vector2 anchorMin = Vector2.zero;
-                Vector2 anchorMax = Vector2.one;
-
-                /*if (m_FillImage != null && m_FillImage.type == Image.Type.Filled)
-                {
-                    m_FillImage.fillAmount = normalizedValue;
-                }
-                else
-                {
-                    if (reverseValue)
-                        anchorMin[(int)axis] = 1 - normalizedValue;
-                    else
-                        anchorMax[(int)axis] = normalizedValue;
-                }*/
-
-                m_FillRect.anchorMin = anchorMin;
-                m_FillRect.anchorMax = anchorMax;
+                m_FillRect.anchorMin = Vector2.zero;
+                m_FillRect.anchorMax = normalizedValue;
             }
 
             if (m_HandleContainerRect != null)
             {
                 m_Tracker.Add(this, m_HandleRect, DrivenTransformProperties.Anchors);
-                Vector2 anchorMin = Vector2.zero;
-                Vector2 anchorMax = Vector2.one;
-                anchorMin = anchorMax = normalizedValue;
-                m_HandleRect.anchorMin = anchorMin;
-                m_HandleRect.anchorMax = anchorMax;
+                var anchor = normalizedValue;
+                m_HandleRect.anchorMin = anchor;
+                m_HandleRect.anchorMax = anchor;
             }
         }
 
@@ -641,7 +621,7 @@ namespace UnityEngine.UI.Extra
         void UpdateDrag(PointerEventData eventData, Camera cam)
         {
             RectTransform clickRect = m_HandleContainerRect ?? m_FillContainerRect;
-            if (clickRect != null /*&& clickRect.rect.size[(int)axis] > 0*/)
+            if (clickRect != null)
             {
                 // TODO MultipleDisplayUtilities.GetRelativeMousePositionForDrag is inaccessible
                 //Vector2 position = Vector2.zero;
