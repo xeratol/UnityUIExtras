@@ -82,7 +82,8 @@ namespace UnityEditor.UI.Extra
 
                 EditorGUILayout.PropertyField(m_WholeNumbers);
                 DisplayGap();
-                DisplayUpperLower();
+                EditorGUILayout.Slider(m_LowerValue, m_MinValue.floatValue, m_MaxValue.floatValue);
+                EditorGUILayout.Slider(m_UpperValue, m_MinValue.floatValue, m_MaxValue.floatValue);
 
                 bool warning = false;
                 foreach (var obj in serializedObject.targetObjects)
@@ -108,35 +109,6 @@ namespace UnityEditor.UI.Extra
             }
 
             serializedObject.ApplyModifiedProperties();
-        }
-
-        private void DisplayUpperLower()
-        {
-            var oldUpperValue = m_UpperValue.floatValue;
-            var oldLowerValue = m_LowerValue.floatValue;
-            EditorGUILayout.Slider(m_UpperValue, m_MinValue.floatValue, m_MaxValue.floatValue);
-            EditorGUILayout.Slider(m_LowerValue, m_MinValue.floatValue, m_MaxValue.floatValue);
-
-            if (m_UpperValue.floatValue < oldUpperValue && m_LowerValue.floatValue > m_UpperValue.floatValue - m_GapValue.floatValue)
-            {
-                var newLowerValue = m_UpperValue.floatValue - m_GapValue.floatValue;
-                if (newLowerValue < m_MinValue.floatValue)
-                {
-                    newLowerValue = m_MinValue.floatValue;
-                }
-                m_UpperValue.floatValue = newLowerValue + m_GapValue.floatValue;
-                m_LowerValue.floatValue = newLowerValue;
-            }
-            else if (m_LowerValue.floatValue > oldLowerValue && m_UpperValue.floatValue < m_LowerValue.floatValue + m_GapValue.floatValue)
-            {
-                var newUppervalue = m_LowerValue.floatValue + m_GapValue.floatValue;
-                if (newUppervalue > m_MaxValue.floatValue)
-                {
-                    newUppervalue = m_MaxValue.floatValue;
-                }
-                m_UpperValue.floatValue = newUppervalue;
-                m_LowerValue.floatValue = newUppervalue - m_GapValue.floatValue;
-            }
         }
 
         private void DisplayGap()
