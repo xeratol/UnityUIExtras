@@ -507,7 +507,35 @@ namespace UnityEngine.UI.Extra
             }
             set
             {
-                // TODO
+                var currentGap = m_UpperValue - m_LowerValue;
+                if (currentGap < m_GapValue)
+                {
+                    var midValue = m_LowerValue + currentGap / 2;
+                    m_UpperValue = midValue + m_GapValue * 0.5f;
+                    m_LowerValue = midValue - m_GapValue * 0.5f;
+
+                    var hasChanged = false;
+                    if (m_UpperValue > m_MaxValue)
+                    {
+                        m_UpperValue = m_MaxValue;
+                        m_LowerValue = m_MaxValue - m_GapValue;
+                        hasChanged = true;
+                    }
+                    else if (m_LowerValue < m_MinValue)
+                    {
+                        m_UpperValue = m_MinValue + m_GapValue;
+                        m_LowerValue = m_MinValue;
+                        hasChanged = true;
+                    }
+
+                    if (hasChanged)
+                    {
+                        UISystemProfilerApi.AddMarker("SliderMinMax.lowerValue", this);
+                        UISystemProfilerApi.AddMarker("SliderMinMax.upperValue", this);
+                        m_OnValueChanged.Invoke(m_LowerValue, m_UpperValue);
+                    }
+                }
+
                 m_GapValue = value;
             }
         }
