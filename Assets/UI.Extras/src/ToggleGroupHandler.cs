@@ -35,7 +35,7 @@ namespace UnityEngine.UI.Extra
 
         private void Awake()
         {
-            Debug.Assert(m_group != null);
+            Debug.Assert(m_group != null, "toggle group cannot be null", this);
         }
 
         private void Start()

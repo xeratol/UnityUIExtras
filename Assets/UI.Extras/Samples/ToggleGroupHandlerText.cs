@@ -14,7 +14,7 @@ public class ToggleGroupHandlerText : MonoBehaviour
         Debug.Assert(text != null);
     }
 
-    public void m_OnToggleSelected(int index)
+    public void OnToggleSelected(int index)
     {
         if (index == -1)
         {

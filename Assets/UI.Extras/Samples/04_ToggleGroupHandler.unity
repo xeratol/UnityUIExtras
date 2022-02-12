@@ -880,17 +880,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bec9dc20b851eff4796ab3ad10bdec77, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  m_group: {fileID: 1373354164}
   m_toggles:
   - {fileID: 1698763882}
   - {fileID: 974527449}
   - {fileID: 1820119748}
   - {fileID: 1937607880}
-  m_OnValueChanged:
+  m_OnToggleSelected:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 2088275406}
         m_TargetAssemblyTypeName: ToggleGroupHandlerText, Assembly-CSharp
-        m_MethodName: OnValueChanged
+        m_MethodName: OnToggleSelected
         m_Mode: 0
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
